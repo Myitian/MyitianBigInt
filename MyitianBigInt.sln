@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34112.27
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyitianBigInt", "MyitianBigInt\MyitianBigInt.vcxproj", "{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}.Debug|x64.ActiveCfg = Debug|x64
+		{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}.Debug|x64.Build.0 = Debug|x64
+		{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}.Debug|x86.ActiveCfg = Debug|Win32
+		{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}.Debug|x86.Build.0 = Debug|Win32
+		{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}.Release|x64.ActiveCfg = Release|x64
+		{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}.Release|x64.Build.0 = Release|x64
+		{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}.Release|x86.ActiveCfg = Release|Win32
+		{FF65495A-6CC2-46AE-8CDB-E3288AF2F614}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {390F7BA7-5EBB-46D5-B36C-9B7F2E700370}
+	EndGlobalSection
+EndGlobal
