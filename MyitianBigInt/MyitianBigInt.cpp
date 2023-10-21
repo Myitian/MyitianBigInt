@@ -42,18 +42,26 @@ namespace myitian
         static const long long BIGINT_PART_LIMIT = BIGINT_PART_CAP - 1;
         static const char BIGINT_CAP_DIGITS = 9;
 
-        bool negative;
+        bool is_negative;
         std::vector<long long> number;
 
         bigint()
         {
-            negative = false;
-            number = std::vector<long long>();
+            is_negative = false;
         }
         bigint(size_t size)
         {
-            negative = false;
-            number = std::vector<long long>(size);
+            is_negative = false;
+            number.resize(size);
+        }
+        bigint(unsigned long long num, bool is_negative)
+        {
+            this->is_negative = is_negative;
+            number.push_back(num % BIGINT_PART_CAP);
+            num /= BIGINT_PART_CAP;
+            number.push_back(num % BIGINT_PART_CAP);
+            num /= BIGINT_PART_CAP;
+            number.push_back(num);
         }
 
         bool operator==(bigint& that)
@@ -66,37 +74,37 @@ namespace myitian
         }
         bigint& operator++()
         {
-            return negative
+            return is_negative
                 ? __private_sub_self_9digit(1)
                 : __private_add_self_18digit(1);
         }
         bigint& operator--()
         {
-            return negative
+            return is_negative
                 ? __private_add_self_18digit(1)
                 : __private_sub_self_9digit(1);
         }
         bigint& operator+=(bigint& that)
         {
-            return negative == that.negative
+            return is_negative == that.is_negative
                 ? __private_add_self(that)
                 : __private_sub_self(that);
         }
         bigint& operator+=(long long that)
         {
-            return negative == (that < 0)
+            return is_negative == (that < 0)
                 ? __private_add_self_18digit(abs(that))
                 : __private_sub_self_9digit(abs(that));
         }
         bigint& operator-=(bigint& that)
         {
-            return negative == that.negative
+            return is_negative == that.is_negative
                 ? __private_sub_self(that)
                 : __private_add_self(that);
         }
         bigint& operator-=(long long that)
         {
-            return negative == (that < 0)
+            return is_negative == (that < 0)
                 ? __private_sub_self_9digit(abs(that))
                 : __private_add_self_18digit(abs(that));
         }
@@ -125,7 +133,7 @@ namespace myitian
             if (number.size() == 0)
             {
                 number.push_back(0);
-                negative = false;
+                is_negative = false;
             }
         }
         size_t real_size()
@@ -155,13 +163,15 @@ namespace myitian
             }
         }
 
-        void fprint(FILE* stream) const
+        int fprint(FILE* stream) const
         {
+            int len = 0;
             size_t num_size = number.size();
             bool print0 = true;
-            if (negative)
+            if (is_negative)
             {
                 putc('-', stream);
+                len++;
             }
             long long n;
             size_t i = num_size;
@@ -170,13 +180,14 @@ namespace myitian
                 if ((n) = number[i])
                 {
                     print0 = false;
-                    fprintf(stream, "%lld", n);
+                    len += fprintf(stream, "%lld", n);
                     break;
                 }
             }
             if (print0)
             {
                 putc('0', stream);
+                len++;
             }
             else
             {
@@ -187,24 +198,83 @@ namespace myitian
                     while (d_0-- > 0)
                     {
                         putc('0', stream);
+                        len++;
                     }
-                    fprintf(stream, "%lld", n);
+                    len += fprintf(stream, "%lld", n);
                 }
             }
+            return len;
         }
-        inline void print() const
+        int sprint(char* buffer) const
         {
-            fprint(stdout);
+            int offset;
+            char* start = buffer;
+            size_t num_size = number.size();
+            bool print0 = true;
+            if (is_negative)
+            {
+                *buffer = '-';
+                buffer++;
+            }
+            long long n;
+            size_t i = num_size;
+            while (i-- > 0)
+            {
+                if ((n) = number[i])
+                {
+                    print0 = false;
+                    offset = sprintf(buffer, "%lld", n);
+                    buffer += offset;
+                    break;
+                }
+            }
+            if (print0)
+            {
+                *buffer = '0';
+                buffer++;
+            }
+            else
+            {
+                while (i-- > 0)
+                {
+                    n = number[i];
+                    char d_0 = BIGINT_CAP_DIGITS - __digit_ll(n);
+                    while (d_0-- > 0)
+                    {
+                        *buffer = '0';
+                        buffer++;
+                    }
+                    offset = sprintf(buffer, "%lld", n);
+                    buffer += offset;
+                }
+            }
+            *buffer = 0;
+            return buffer - start;
+        }
+        inline int print() const
+        {
+            return fprint(stdout);
         }
 
-        static void fscanbigint(bigint& num, FILE* stream)
+        void re_init(unsigned long long num, bool is_negative)
+        {
+            this->is_negative = is_negative;
+            number.clear();
+            number.push_back(num % BIGINT_PART_CAP);
+            num /= BIGINT_PART_CAP;
+            number.push_back(num % BIGINT_PART_CAP);
+            num /= BIGINT_PART_CAP;
+            number.push_back(num);
+        }
+
+        void fscanbigint(FILE* stream)
         {
             char c;
         SCAN_START:
             switch (c = getc(stream))
             {
             case '-':
-                num.negative = true;
+                is_negative = true;
                 break;
             case '+':
                 break;
@@ -246,7 +316,7 @@ namespace myitian
             {
                 digit_part_pos = 0;
             }
-            num.number.resize(bigint_part_count);
+            number.resize(bigint_part_count);
             long long tmp;
             size_t digit_pos = 0;
             size_t i = bigint_part_count;
@@ -259,14 +329,23 @@ namespace myitian
                     tmp += digits[digit_pos++] - '0';
                     digit_part_pos++;
                 }
-                num.number[i] = tmp;
+                number[i] = tmp;
                 digit_part_pos = 0;
             }
 
         }
+        inline void scanbigint()
+        {
+            fscanbigint(stdin);
+        }
+
+        static void fscanbigint(bigint& num, FILE* stream)
+        {
+            num.fscanbigint(stream);
+        }
         static inline void scanbigint(bigint& num)
         {
-            fscanbigint(num, stdin);
+            num.scanbigint();
         }
     private:
         bool __private_equals(bigint& that)
@@ -280,7 +359,7 @@ namespace myitian
                 return false;
             if (i < 0)
                 return true;
-            if (negative != that.negative)
+            if (is_negative != that.is_negative)
                 return false;
             i++;
             while (i-- > 0)
@@ -365,7 +444,7 @@ namespace myitian
             {
                 number.clear();
                 number.push_back(0);
-                negative = false;
+                is_negative = false;
                 return *this;
             }
             size_t that_size = that.number.size();
@@ -420,7 +499,7 @@ namespace myitian
                     number[i] = BIGINT_PART_LIMIT - number[i];
                 }
                 __private_add_self_18digit(1);
-                negative = !negative;
+                is_negative = !is_negative;
             }
             return *this;
         }
@@ -469,7 +548,7 @@ namespace myitian
                     number[i] = BIGINT_PART_LIMIT - number[i];
                 }
                 __private_add_self_18digit(1);
-                negative = !negative;
+                is_negative = !is_negative;
             }
             return *this;
         }
@@ -479,14 +558,14 @@ namespace myitian
             {
                 number.clear();
                 number.push_back(0);
-                negative = false;
+                is_negative = false;
                 return *this;
             }
             bigint tmp = *this;
             number.clear();
             size_t this_size = tmp.real_size();
             size_t that_size = that.real_size();
-            negative = negative != that.negative;
+            is_negative = is_negative != that.is_negative;
             size_t i, j;
             for (i = 0; i < that_size; i++)
             {
@@ -514,7 +593,7 @@ namespace myitian
             {
                 number.clear();
                 number.push_back(0);
-                negative = false;
+                is_negative = false;
                 return *this;
             }
             if (is_zero())
@@ -524,7 +603,7 @@ namespace myitian
             if (that < 0)
             {
                 that = -that;
-                negative = !negative;
+                is_negative = !is_negative;
             }
             that %= BIGINT_PART_CAP;
 
@@ -539,12 +618,39 @@ namespace myitian
 
     } bigint;
 }
-
+char getnwc()
+{
+    char c;
+L:
+    switch (c = getchar())
+    {
+    case ' ':
+    case '\r':
+    case '\n':
+    case '\t':
+    case '\v':
+        goto L;
+    default:
+        return c;
+    }
+}
 int main()
 {
-    myitian::bigint n1 = myitian::bigint(512), n2 = myitian::bigint(512);
-    myitian::bigint::scanbigint(n1);
-    myitian::bigint::scanbigint(n2);
-    n1 *= n2;
-    n1.print();
+    char d, b[2570];
+    int n, x, c;
+    scanf("%d", &n);
+    myitian::bigint m(286);
+    while (n-->0)
+    {
+        c = 0;
+        scanf("%d %c", &x, &d);
+        m.re_init(x, false);
+        while (x-->1)
+            m *= x;
+        x = m.sprint(b);
+        while (x-->0)
+            if (b[x] == d)
+                c++;
+        printf("%d\n", c);
+    }
 }
