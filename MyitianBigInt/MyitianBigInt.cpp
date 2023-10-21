@@ -35,6 +35,9 @@ namespace myitian
                         return 1;
     }
 
+    /// <summary>
+    /// https://github.com/Myitian/MyitianBigInt
+    /// </summary>
     typedef struct bigint
     {
         static const long long BIGINT_PART_CAP = 1000000000LL;
@@ -48,10 +51,12 @@ namespace myitian
         bigint()
         {
             is_negative = false;
+            number.push_back(0);
         }
         bigint(size_t size)
         {
             is_negative = false;
+            number.push_back(0);
             number.resize(size);
         }
         bigint(unsigned long long num, bool is_negative)
@@ -64,13 +69,29 @@ namespace myitian
             number.push_back(num);
         }
 
-        bool operator==(bigint& that)
+        bool operator==(bigint& that) const
         {
             return __private_equals(that);
         }
-        bool operator!=(bigint& that)
+        bool operator!=(bigint& that) const
         {
             return !__private_equals(that);
+        }
+        bool operator<=(bigint& that) const
+        {
+            return !__private_greater_than(that);
+        }
+        bool operator>=(bigint& that) const
+        {
+            return !__private_less_than(that);
+        }
+        bool operator<(bigint& that) const
+        {
+            return __private_less_than(that);
+        }
+        bool operator>(bigint& that) const
+        {
+            return __private_greater_than(that);
         }
         bigint& operator++()
         {
@@ -83,6 +104,14 @@ namespace myitian
             return is_negative
                 ? __private_add_self_18digit(1)
                 : __private_sub_self_9digit(1);
+        }
+        bigint& operator<<= (size_t n)
+        {
+            return __private_left_shift_self(n);
+        }
+        bigint& operator>>=(size_t n)
+        {
+            return __private_right_shift_self(n);
         }
         bigint& operator+=(bigint& that)
         {
@@ -116,8 +145,28 @@ namespace myitian
         {
             return __private_mul_self_9digit(that);
         }
+        bigint& operator/=(bigint& that)
+        {
+            return __private_div_self(that);
+        }
+        bigint& operator/=(long long that)
+        {
+            return __private_div_self_9digit(that);
+        }
+        bigint& operator%=(bigint& that)
+        {
+            return __private_mod_self(that);
+        }
+        bigint& operator%=(long long that)
+        {
+            return __private_mod_self_9digit(that);
+        }
 
-        bool is_zero()
+        bool is_error() const
+        {
+            return number.size() == 0;
+        }
+        bool is_zero() const
         {
             size_t i = number.size();
             while (i-- > 0 && !number[i]);
@@ -136,8 +185,10 @@ namespace myitian
                 is_negative = false;
             }
         }
-        size_t real_size()
+        size_t real_size() const
         {
+            if (is_error())
+                return 0;
             size_t i = number.size();
             while (i-- > 0 && !number[i]);
             return i < 0 ? 1 : i + 1;
@@ -347,28 +398,102 @@ namespace myitian
         {
             num.scanbigint();
         }
+
+
     private:
-        bool __private_equals(bigint& that)
+        bool __private_equals(bigint& that) const
         {
-            size_t this_size = number.size();
-            size_t that_size = that.number.size();
+            size_t this_size = real_size();
+            size_t that_size = that.real_size();
             size_t i = this_size, j = that_size;
-            while (i-- > 0 && !number[i]);
-            while (j-- > 0 && !that.number[j]);
             if (i != j)
                 return false;
-            if (i < 0)
+            if (is_zero() && that.is_zero())
                 return true;
             if (is_negative != that.is_negative)
                 return false;
-            i++;
             while (i-- > 0)
                 if (number[i] != that.number[i])
                     return false;
             return true;
         }
+        bool __private_less_than(bigint& that) const
+        {
+            size_t this_size = real_size();
+            size_t that_size = that.real_size();
+            if (this_size != that_size)
+                return this_size < that_size;
+            if (is_zero() && that.is_zero())
+                return false;
+            if (is_negative != that.is_negative)
+                return is_negative;
+            size_t i = this_size;
+            while (i-- > 0)
+            {
+                if (number[i] != that.number[i])
+                    return number[i] < that.number[i];
+            }
+            return false;
+        }
+        bool __private_greater_than(bigint& that) const
+        {
+            size_t this_size = real_size();
+            size_t that_size = that.real_size();
+            if (this_size != that_size)
+                return this_size > that_size;
+            if (is_zero() && that.is_zero())
+                return false;
+            if (is_negative != that.is_negative)
+                return that.is_negative;
+            size_t i = this_size;
+            while (i-- > 0)
+            {
+                if (number[i] != that.number[i])
+                    return number[i] > that.number[i];
+            }
+            return false;
+        }
+        bigint& __private_left_shift_self(size_t n)
+        {
+            if (is_error())
+            {
+                return *this;
+            }
+            size_t i = real_size();
+            number.resize(i + n);
+            while (i-- > 0)
+            {
+                number[i + n] = number[i];
+            }
+            i = n;
+            while (i-- > 0)
+            {
+                number[i] = 0;
+            }
+            return *this;
+        }
+        bigint& __private_right_shift_self(size_t n)
+        {
+            if (is_error())
+            {
+                return *this;
+            }
+            size_t this_size = real_size();
+            size_t this_size_mn = this_size - n, i = 0;
+            for (; i < this_size_mn; i++)
+            {
+                number[i] = number[i + n];
+            }
+            number.resize(i - n + 1);
+            return *this;
+        }
         bigint& __private_add_self(bigint& that)
         {
+            if (is_error() || that.is_error())
+            {
+                number.clear();
+                return *this;
+            }
             size_t that_size = that.number.size();
 
             long long c = 0, n;
@@ -407,6 +532,10 @@ namespace myitian
         }
         bigint& __private_add_self_18digit(long long that)
         {
+            if (is_error())
+            {
+                return *this;
+            }
             that %= BIGINT_ADD_CAP;
 
             long long c = 0, n;
@@ -440,6 +569,11 @@ namespace myitian
         }
         bigint& __private_sub_self(bigint& that)
         {
+            if (is_error() || that.is_error())
+            {
+                number.clear();
+                return *this;
+            }
             if (__private_equals(that))
             {
                 number.clear();
@@ -505,6 +639,10 @@ namespace myitian
         }
         bigint& __private_sub_self_9digit(long long that)
         {
+            if (is_error())
+            {
+                return *this;
+            }
             that %= BIGINT_PART_CAP;
 
             size_t this_size = number.size();
@@ -554,6 +692,11 @@ namespace myitian
         }
         bigint& __private_mul_self(bigint& that)
         {
+            if (is_error() || that.is_error())
+            {
+                number.clear();
+                return *this;
+            }
             if (is_zero() || that.is_zero())
             {
                 number.clear();
@@ -589,6 +732,15 @@ namespace myitian
         }
         bigint& __private_mul_self_9digit(long long that)
         {
+            if (is_error())
+            {
+                return *this;
+            }
+            if (that == BIGINT_PART_CAP)
+            {
+                return __private_left_shift_self(1);
+            }
+            that %= BIGINT_PART_CAP;
             if (that == 0)
             {
                 number.clear();
@@ -598,6 +750,7 @@ namespace myitian
             }
             if (is_zero())
             {
+                is_negative = false;
                 return *this;
             }
             if (that < 0)
@@ -605,9 +758,12 @@ namespace myitian
                 that = -that;
                 is_negative = !is_negative;
             }
-            that %= BIGINT_PART_CAP;
+            if (that == 1)
+            {
+                return *this;
+            }
 
-            size_t this_size = number.size(), i = 0;
+            size_t this_size = real_size(), i = 0;
             while (i < this_size)
             {
                 number[i++] *= that;
@@ -615,42 +771,163 @@ namespace myitian
             carry();
             return *this;
         }
+        bigint& __private_div_self(bigint& that)
+        {
+            if (is_error() || that.is_error() || that.is_zero())
+            {
+                number.clear();
+                return *this;
+            }
+            if (that.real_size() == 1)
+            {
+                return __private_div_self_9digit(that.number[0]);
+            }
+            if (*this < that)
+            {
+                is_negative = false;
+                number.clear();
+                number.push_back(0);
+                return *this;
+            }
+            is_negative = is_negative != that.is_negative;
+            std::vector<bigint> _2pow = { bigint(1, false) };
+            std::vector<bigint> num_mul_2pow = { that };
+            bigint tmp;
+            int i = 0;
+            while (!__private_less_than(num_mul_2pow[i])) // num_mul_2pow[i] <= *this
+            {
+                tmp = _2pow[i];
+                tmp *= 2;
+                _2pow.push_back(tmp);
+                tmp = num_mul_2pow[i];
+                tmp *= 2;
+                num_mul_2pow.push_back(tmp);
+                i++;
+            }
+            tmp = *this;
+            re_init(0, false);
+            while (i-->0)
+            {
+                if (num_mul_2pow[i] <= tmp)
+                {
+                    tmp -= num_mul_2pow[i];
+                    __private_add_self(_2pow[i]);
+                }
+            }
+            return *this;
+        }
+        bigint& __private_div_self_9digit(long long that)
+        {
+            if (is_error())
+            {
+                return *this;
+            }
+            if (that == BIGINT_PART_CAP)
+            {
+                return __private_right_shift_self(1);
+            }
+            that %= BIGINT_PART_CAP;
+            if (that == 0)
+            {
+                number.clear();
+                is_negative = false;
+                return *this;
+            }
+            if (is_zero())
+            {
+                is_negative = false;
+                return *this;
+            }
+            if (that < 0)
+            {
+                that = -that;
+                is_negative = !is_negative;
+            }
+            if (that == 1)
+            {
+                return *this;
+            }
 
+            size_t i = real_size();
+            long long n, c = 0;
+            while (i-- > 0)
+            {
+                n = number[i] + c * BIGINT_PART_CAP;
+                c = n % that;
+                number[i] = n / that;
+            }
+            return *this;
+        }
+        bigint& __private_mod_self(bigint& that)
+        {
+            if (is_error() || that.is_error())
+            {
+                number.clear();
+                return *this;
+            }
+            if (that.real_size() == 1)
+            {
+                return __private_mod_self_9digit(that.number[0]);
+            }
+            if (*this < that)
+            {
+                return *this;
+            }
+            bigint tmp = *this;
+            tmp /= that;
+            tmp *= that;
+            __private_sub_self(tmp);
+            return *this;
+        }
+        bigint& __private_mod_self_9digit(long long that)
+        {
+            if (is_error())
+            {
+                return *this;
+            }
+            long long m;
+            if (that == BIGINT_PART_CAP)
+            {
+                m = number[0];
+            }
+            else
+            {
+                that %= BIGINT_PART_CAP;
+                if (that == 0)
+                {
+                    number.clear();
+                    return *this;
+                }
+                m = number[0] % that;
+            }
+            number.clear();
+            number.push_back(m);
+            return *this;
+        }
     } bigint;
-}
-char getnwc()
-{
-    char c;
-L:
-    switch (c = getchar())
-    {
-    case ' ':
-    case '\r':
-    case '\n':
-    case '\t':
-    case '\v':
-        goto L;
-    default:
-        return c;
-    }
 }
 int main()
 {
-    char d, b[2570];
-    int n, x, c;
-    scanf("%d", &n);
-    myitian::bigint m(286);
-    while (n-->0)
-    {
-        c = 0;
-        scanf("%d %c", &x, &d);
-        m.re_init(x, false);
-        while (x-->1)
-            m *= x;
-        x = m.sprint(b);
-        while (x-->0)
-            if (b[x] == d)
-                c++;
-        printf("%d\n", c);
-    }
+    myitian::bigint x,t,y;
+    x.scanbigint();
+    y.scanbigint();
+    t = x;
+    t += y;
+    t.print();
+    putchar('\n');
+    t = x;
+    t -= y;
+    t.print();
+    putchar('\n');
+    t = x;
+    t *= y;
+    t.print();
+    putchar('\n');
+    t = x;
+    t /= y;
+    t.print();
+    putchar('\n');
+    t = x;
+    t %= y;
+    t.print();
 }
