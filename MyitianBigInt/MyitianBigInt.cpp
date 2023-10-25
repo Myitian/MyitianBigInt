@@ -592,33 +592,7 @@ namespace myitian
                 c = getc(stream);
             }
             ungetc(c, stream);
-            size_t digit_count = digits.size();
-            size_t bigint_part_count = digit_count / BIGINT_CAP_DIGITS;
-            char ext = (char)(digit_count % BIGINT_CAP_DIGITS);
-            char digit_part_pos;
-            if (ext)
-            {
-                bigint_part_count++;
-                digit_part_pos = BIGINT_CAP_DIGITS - ext;
-            }
-            else
-                digit_part_pos = 0;
-            number.resize(bigint_part_count);
-            int64_t tmp;
-            size_t digit_pos = 0;
-            size_t i = bigint_part_count;
-            while (i-- > 0)
-            {
-                tmp = 0;
-                while (digit_part_pos < BIGINT_CAP_DIGITS)
-                {
-                    tmp *= 10;
-                    tmp += digits[digit_pos++] - '0';
-                    digit_part_pos++;
-                }
-                number[i] = tmp;
-                digit_part_pos = 0;
-            }
+            re_init(digits, is_negative);
             return c == EOF ? EOF : 1;
         }
         int sscanbigint(const char* str)
@@ -660,10 +634,10 @@ namespace myitian
                 digits.push_back(c);
                 c = str[offset++];
             }
-
+            re_init(digits, is_negative);
             return c ? 1 : EOF;
         }
-        inline int scanbigint()
+        int scanbigint()
         {
             return fscanbigint(stdin);
         }
@@ -676,7 +650,7 @@ namespace myitian
         {
             return num.sscanbigint(str);
         }
-        static inline int scanbigint(bigint& num)
+        static int scanbigint(bigint& num)
         {
             return num.scanbigint();
         }
