@@ -1,12 +1,13 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
 #include <cstdio>
+#include <cstdint>
+#include <iostream>
 #include <string>
 #include <vector>
 
 namespace myitian
 {
-    static inline char __digit_i64(int64_t n)
+    static char __digit_i64(int64_t n)
     {
         if (n >= 100000)
             if (n >= 10000000)
@@ -440,7 +441,7 @@ namespace myitian
             *buffer = 0;
             return (int)(buffer - start);
         }
-        inline int print() const
+        int print() const
         {
             return fprint(stdout);
         }
