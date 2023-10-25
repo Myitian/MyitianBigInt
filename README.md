@@ -4,7 +4,7 @@
 
 ## Example
 ```cpp
-myitian::bigint n1(512), n2(888888888888, true);
+myitian::bigint n1, n2(888888888888, true);
 n1.scanbigint();
 --n1;
 n1 *= n2;
